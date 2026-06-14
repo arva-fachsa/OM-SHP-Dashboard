@@ -70,7 +70,7 @@ def dark_layout(fig, height=250):
     return fig
 
 # --- Sidebar Filters ---
-st.sidebar.markdown("""<div style='margin-bottom:8px;line-height:1.2'>
+st.sidebar.markdown("""<div style='margin-bottom:8px;line-height:1.2;text-align:center'>
 <span style='font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#00B2A9;letter-spacing:1.5px'>SIEMENS</span><br>
 <span style='font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#7B2D8B;letter-spacing:0.5px'>energy</span>
 </div>""", unsafe_allow_html=True)
