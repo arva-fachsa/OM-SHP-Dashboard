@@ -97,11 +97,11 @@ with col_h1:
     st.markdown("# Shipping Operations Dashboard")
 with col_h2:
     st.markdown(
-        """<div style='text-align:right;padding-top:6px'>
-        <span style='background:rgba(0,201,177,.12);color:#00c9b1;padding:4px 10px;border-radius:99px;font-size:12px;border:1px solid rgba(0,201,177,.3)'>● Live</span>
-        <div style='margin-top:6px;line-height:1.1;text-align:right'>
-            <span style='font-family:Arial,Helvetica,sans-serif;font-size:26px;font-weight:bold;color:#00B2A9;letter-spacing:2px'>SIEMENS</span><br>
-            <span style='font-family:Arial,Helvetica,sans-serif;font-size:26px;font-weight:bold;color:#7B2D8B;letter-spacing:1px'>energy</span>
+        """<div style='text-align:right;padding-top:10px'>
+        <span style='background:rgba(0,201,177,.12);color:#00c9b1;padding:4px 10px;border-radius:99px;font-size:11px;border:1px solid rgba(0,201,177,.3)'>● Live</span>
+        <div style='margin-top:4px;line-height:1.15;text-align:right'>
+            <span style='font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#00B2A9;letter-spacing:1.5px'>SIEMENS</span><br>
+            <span style='font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#7B2D8B;letter-spacing:0.5px'>energy</span>
         </div>
         </div>""", unsafe_allow_html=True)
 
