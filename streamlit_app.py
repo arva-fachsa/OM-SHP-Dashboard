@@ -161,7 +161,8 @@ with tab_dm:
 
             col1, col2 = st.columns(2)
             with col1:
-                st.subheader("Team Assignment")
+                st.markdown("**Team Assignment**")
+                st.caption(f"TEAM · {total:,} deliveries")
                 team_counts = dm["TEAM"].value_counts().reset_index()
                 team_counts.columns = ["Team", "Count"]
                 fig = px.pie(team_counts, values="Count", names="Team",
@@ -169,7 +170,8 @@ with tab_dm:
                 st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
 
             with col2:
-                st.subheader("Monthly Volume")
+                st.markdown("**Monthly Volume**")
+                st.caption(f"MONTH · {total:,} deliveries")
                 month_counts = dm["MONTH"].value_counts().sort_index().reset_index()
                 month_counts.columns = ["Month", "Count"]
                 month_names = {"2025-07": "Jul 2025", "2025-08": "Aug 2025", "2025-09": "Sep 2025"}
@@ -179,7 +181,8 @@ with tab_dm:
                 fig.update_layout(xaxis_type="category")
                 st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
 
-            st.subheader("Auswertung Categories")
+            st.markdown("**Auswertung Categories**")
+            st.caption(f"AUSWERTUNG · top 6 of {total:,}")
             ausw = dm["AUSWERTUNG"].value_counts().head(6)
             rows_html = ""
             for cat_name, cnt in ausw.items():
@@ -223,7 +226,8 @@ with tab_dm:
                 if l2 > 0:
                     st.markdown(f"<div style='background:rgba(0,201,177,.08);border:1px solid rgba(0,201,177,.2);border-radius:6px;padding:7px 10px;font-size:10px;color:#00c9b1;margin-top:8px'>{l2} locked deliveries (02) need action</div>", unsafe_allow_html=True)
 
-            st.subheader("Top Destination Countries")
+            st.markdown("**Top Destination Countries**")
+            st.caption(f"LAND_ENDKUNDE · {total:,} deliveries")
             countries = dm["LAND_ENDKUNDE"].value_counts().head(8).reset_index()
             countries.columns = ["Country", "Count"]
             bar_colors = ["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#e74c3c", "#2ecc71", "#7b85a8", "#854F0B"]
@@ -284,7 +288,8 @@ with tab_dm:
                     <span style='font-size:13px;font-weight:500;color:{color}'>{val:,}</span></div>"""
                 st.markdown(rows_html, unsafe_allow_html=True)
             with col2:
-                st.subheader("Blocker Distribution")
+                st.markdown("**Blocker Distribution**")
+                st.caption("Share of open blockers")
                 if sum([nzv_zzz, ecc_ze, nzv_fl, lock_02, ecc_z1]) > 0:
                     fig = px.pie(values=[nzv_zzz, ecc_ze, nzv_fl, lock_02, ecc_z1],
                                  names=["NzV ZZZ", "ECC ZE", "NZV flag", "Lock 02", "Z1"],
@@ -332,7 +337,8 @@ with tab_kl:
 
             col1, col2 = st.columns(2)
             with col1:
-                st.subheader("Monthly Shipments by Team")
+                st.markdown("**Monthly Shipments by Team**")
+                st.caption(f"MONTH × TEAM · {kl_total:,} shipments")
                 monthly_team = kl.groupby(["MONTH", "TEAM"]).size().reset_index(name="Count")
                 month_labels = {"2025-07": "Jul 2025", "2025-08": "Aug 2025", "2025-09": "Sep 2025"}
                 monthly_team["Label"] = monthly_team["MONTH"].map(month_labels).fillna(monthly_team["MONTH"])
@@ -342,14 +348,12 @@ with tab_kl:
                 fig.update_layout(legend_title="", xaxis_type="category")
                 st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
             with col2:
-                st.markdown("**Business area volume**")
-                st.caption("Shipments per Geschaeftsgebiet_Kz")
+                st.markdown("**Business area split**")
+                st.caption(f"Geschaeftsgebiet_Kz · {kl_total:,} shipments")
                 areas = kl["GESCHAEFTSGEBIET_KZ"].value_counts().reset_index()
                 areas.columns = ["Area", "Count"]
-                area_colors = ["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#7b85a8"]
-                fig = go.Figure(go.Bar(x=areas["Area"].tolist(), y=areas["Count"].tolist(),
-                                       marker_color=area_colors[:len(areas)]))
-                fig.update_layout(xaxis_type="category")
+                fig = px.pie(areas, values="Count", names="Area",
+                             color_discrete_sequence=["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#7b85a8"], hole=0.55)
                 st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
 
         with subtab_geo:
@@ -363,8 +367,8 @@ with tab_kl:
             c3.markdown(kpi_card("Domestic DE", f"{domestic:,}", "#00c9b1", "Landname_Endverw = DE"), unsafe_allow_html=True)
             c4.markdown(kpi_card("International", f"{kl_total - domestic:,}", None, "Landname_Endverw ≠ DE"), unsafe_allow_html=True)
 
-            st.subheader("Top 10 Destination Countries")
-            st.caption("Landname_Endverw")
+            st.markdown("**Top 10 Destination Countries**")
+            st.caption(f"Landname_Endverw · {kl_total:,} shipments")
             top_countries = countries_kl[countries_kl.index != ""].head(10).reset_index()
             top_countries.columns = ["Country", "Count"]
             geo_colors = ["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#e74c3c", "#2ecc71", "#7b85a8", "#854F0B", "#1abc9c", "#c0392b"]
@@ -389,7 +393,16 @@ with tab_kl:
                                  top_proj.iloc[0]["Project"] if len(top_proj) > 0 else ""), unsafe_allow_html=True)
             c3.markdown(kpi_card("Top 5 share", safe_pct(top_proj.head(5)["Shipments"].sum(), kl_total), None, "% of total shipments"), unsafe_allow_html=True)
 
-            st.subheader("Top 12 Projects")
+            # Business area volume cards
+            st.markdown("**Business area volume**")
+            st.caption("Shipments per Geschaeftsgebiet_Kz")
+            area_counts = kl["GESCHAEFTSGEBIET_KZ"].value_counts()
+            area_cols = st.columns(min(len(area_counts), 5))
+            area_color_map = {"W": "#9b59d0", "O": "#00c9b1", "P3": "#4a90d9", "G": "#f39c12", "SLS": "#7b85a8"}
+            for i, (area_name, area_cnt) in enumerate(area_counts.head(5).items()):
+                area_cols[i].markdown(kpi_card(area_name, f"{area_cnt:,}", area_color_map.get(area_name, "#7b85a8"), safe_pct(area_cnt, kl_total)), unsafe_allow_html=True)
+
+            st.markdown("**Top 12 Projects**")
             st.caption("Projkennw · Geschaeftsgebiet_Kz · Team")
             st.dataframe(top_proj, use_container_width=True, hide_index=True)
 
@@ -422,7 +435,7 @@ with tab_kl:
                 st.markdown(rows_html, unsafe_allow_html=True)
             with col2:
                 st.markdown("**Freight Forwarder Hubs**")
-                st.caption("Stadt_Warbe_VB · City where FF picks up the shipment")
+                st.caption(f"Stadt_Warbe_VB · {kl_total:,} shipments")
                 ff_ops = kl[kl["STADT_WARBE_VB"] != ""]["STADT_WARBE_VB"].value_counts().head(5).reset_index()
                 ff_ops.columns = ["City", "Count"]
                 fig = px.bar(ff_ops, x="City", y="Count", color_discrete_sequence=["#00c9b1"])
