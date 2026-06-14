@@ -15,13 +15,21 @@ st.set_page_config(
 if 'dark_mode' not in st.session_state:
     st.session_state.dark_mode = True
 
+THEME_TEXT = "#e8eaf2" if st.session_state.dark_mode else "#1a1a2e"
+THEME_BG_CARD = "rgba(26,31,48,.85)" if st.session_state.dark_mode else "rgba(230,235,245,.95)"
+THEME_CHART_FONT = "#e8eaf2" if st.session_state.dark_mode else "#1a1a2e"
+
 if not st.session_state.dark_mode:
     st.markdown("""<style>
         [data-testid="stAppViewContainer"] { background-color: #ffffff; }
         [data-testid="stSidebar"] { background-color: #f0f2f6; }
         [data-testid="stHeader"] { background-color: #ffffff; }
-        .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 { color: #1a1a2e !important; }
+        .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+        .stMarkdown h4, .stMarkdown h5, .stMarkdown span, .stMarkdown div { color: #1a1a2e !important; }
         [data-testid="stCaptionContainer"] p { color: #555 !important; }
+        [data-testid="stTabs"] button { color: #1a1a2e !important; }
+        [data-testid="stTabs"] button[aria-selected="true"] { color: #00c9b1 !important; }
+        .stSelectbox label p { color: #1a1a2e !important; }
     </style>""", unsafe_allow_html=True)
 
 # --- Data Loading from CSV ---
@@ -51,8 +59,11 @@ df_kl = load_kl()
 def safe_pct(part, total):
     return f"{part/total*100:.1f}%" if total > 0 else "0%"
 
-def kpi_card(label, value, color="#e8eaf2", sub=""):
-    return f"""<div style='background:#1a1f30;border:1px solid #2a3050;border-radius:8px;padding:10px 12px'>
+def kpi_card(label, value, color=None, sub=""):
+    if color is None:
+        color = THEME_TEXT
+    bg = THEME_BG_CARD
+    return f"""<div style='background:{bg};border:1px solid rgba(42,48,80,.5);border-radius:8px;padding:10px 12px'>
     <div style='font-size:10px;color:#7b85a8'>{label}</div>
     <div style='font-size:22px;font-weight:500;color:{color}'>{value}</div>
     <div style='font-size:9px;color:#7b85a8;opacity:.6;font-style:italic'>{sub}</div></div>"""
@@ -67,7 +78,7 @@ def color_box(value, label, color):
 def dark_layout(fig, height=250):
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#e8eaf2", height=height,
+        font_color=THEME_CHART_FONT, height=height,
         margin=dict(t=20, b=20, l=20, r=20),
         xaxis=dict(gridcolor="rgba(42,48,80,.6)", title=""),
         yaxis=dict(gridcolor="rgba(42,48,80,.6)", title=""),
@@ -156,8 +167,8 @@ with tab_dm:
             c1, c2, c3, c4, c5, c6 = st.columns(6)
             c1.markdown(kpi_card("Total deliveries", f"{total:,}"), unsafe_allow_html=True)
             c2.markdown(kpi_card("AWV deliveries", f"{awv:,}", "#00c9b1", "WTH 0009 + 0010"), unsafe_allow_html=True)
-            c3.markdown(kpi_card("EU", f"{eu:,}", "#e8eaf2", safe_pct(eu, total) + " of total"), unsafe_allow_html=True)
-            c4.markdown(kpi_card("NONEU", f"{noneu:,}", "#e8eaf2", safe_pct(noneu, total) + " of total"), unsafe_allow_html=True)
+            c3.markdown(kpi_card("EU", f"{eu:,}", THEME_TEXT, safe_pct(eu, total) + " of total"), unsafe_allow_html=True)
+            c4.markdown(kpi_card("NONEU", f"{noneu:,}", THEME_TEXT, safe_pct(noneu, total) + " of total"), unsafe_allow_html=True)
             c5.markdown(kpi_card("NZV flag", f"{nzv_flag:,}", "#f39c12", 'NZV_Flag = "Ja"'), unsafe_allow_html=True)
             c6.markdown(kpi_card("NzV transport", f"{nzv_traty:,}", "#f39c12", 'TRATY_Code = "ZZZ"'), unsafe_allow_html=True)
 
@@ -186,8 +197,8 @@ with tab_dm:
             rows_html = ""
             for cat_name, cnt in ausw.items():
                 rows_html += f"""<div style='display:flex;justify-content:space-between;align-items:center;padding:6px 9px;background:#181c27;border-radius:6px;border:1px solid #2a3050;margin-bottom:4px'>
-                <span style='font-size:11px;color:#e8eaf2'>{cat_name}</span>
-                <span style='font-size:12px;font-weight:500;color:#e8eaf2'>{cnt:,}</span></div>"""
+                <span style='font-size:11px;color:{THEME_TEXT}'>{cat_name}</span>
+                <span style='font-size:12px;font-weight:500;color:{THEME_TEXT}'>{cnt:,}</span></div>"""
             st.markdown(rows_html, unsafe_allow_html=True)
 
         with subtab_st:
@@ -202,7 +213,7 @@ with tab_dm:
                     label = f"{traty_map.get(code, code)} ({code})"
                     color = traty_colors.get(code, "#7b85a8")
                     rows_html += f"""<div style='display:flex;justify-content:space-between;align-items:center;padding:6px 9px;background:#181c27;border-radius:6px;border:1px solid #2a3050;margin-bottom:4px'>
-                    <span style='font-size:11px;color:#e8eaf2'>{label}</span>
+                    <span style='font-size:11px;color:{THEME_TEXT}'>{label}</span>
                     <span style='font-size:12px;font-weight:500;color:{color}'>{count:,}</span></div>"""
                 st.markdown(rows_html, unsafe_allow_html=True)
 
@@ -263,7 +274,7 @@ with tab_dm:
                 rows_html = ""
                 for label, val, color in blockers:
                     rows_html += f"""<div style='display:flex;justify-content:space-between;align-items:center;padding:6px 9px;background:#181c27;border-radius:6px;border:1px solid #2a3050;margin-bottom:4px'>
-                    <span style='font-size:11px;color:#e8eaf2'>{label}</span>
+                    <span style='font-size:11px;color:{THEME_TEXT}'>{label}</span>
                     <span style='font-size:12px;font-weight:500;color:{color}'>{val:,}</span></div>"""
                 st.markdown(rows_html, unsafe_allow_html=True)
             with col2:
@@ -392,7 +403,7 @@ with tab_kl:
                     label = org_id if org_id else "NULL records"
                     color = "#e74c3c" if not org_id else "#2ecc71"
                     rows_html += f"""<div style='display:flex;justify-content:space-between;align-items:center;padding:6px 9px;background:#181c27;border-radius:6px;border:1px solid #2a3050;margin-bottom:4px'>
-                    <span style='font-size:11px;color:#e8eaf2'>{label}</span>
+                    <span style='font-size:11px;color:{THEME_TEXT}'>{label}</span>
                     <span style='font-size:12px;font-weight:500;color:{color}'>{cnt:,} ({safe_pct(cnt, kl_total)})</span></div>"""
                 st.markdown(rows_html, unsafe_allow_html=True)
             with col2:
