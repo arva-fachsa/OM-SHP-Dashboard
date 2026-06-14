@@ -85,12 +85,24 @@ def dark_layout(fig, height=250, title="", subtitle=""):
                 trace.hovertemplate = '<b>%{label}</b>: %{value:,} (%{percent})<extra></extra>'
     return fig
 
-# Inject CSS to give chart containers the card border style
+# Inject CSS for spacing and card styling
 st.markdown("""<style>
 [data-testid="stPlotlyChart"] {
     border: 1px solid rgba(42,48,80,.5);
     border-radius: 8px;
     padding: 4px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+[data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] {
+    margin-bottom: 6px;
+}
+[data-testid="column"] > div {
+    gap: 0.4rem;
+}
+h3 {
+    margin-top: 16px !important;
+    margin-bottom: 4px !important;
 }
 </style>""", unsafe_allow_html=True)
 
