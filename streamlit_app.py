@@ -99,7 +99,11 @@ with col_h2:
     st.markdown(
         """<div style='text-align:right;padding-top:10px'>
         <span style='background:rgba(0,201,177,.12);color:#00c9b1;padding:4px 10px;border-radius:99px;font-size:12px;border:1px solid rgba(0,201,177,.3)'>● Live</span>
-        <br><span style='color:#00c9b1;font-weight:500'>SIEMENS</span> <span style='color:#9b59d0;font-weight:500'>energy</span>
+        <br>
+        <svg width="140" height="48" viewBox="0 0 280 96" xmlns="http://www.w3.org/2000/svg" style="margin-top:4px">
+          <text x="0" y="38" font-family="Arial,sans-serif" font-size="40" font-weight="bold" fill="#009999" letter-spacing="-1">SIEMENS</text>
+          <text x="0" y="80" font-family="Arial,sans-serif" font-size="40" font-weight="bold" fill="#7B2D8B" letter-spacing="-1">energy</text>
+        </svg>
         </div>""", unsafe_allow_html=True)
 
 active_filters = sum([period_val is not None, team_filter != "All teams", category != "All", plant != "All"])
