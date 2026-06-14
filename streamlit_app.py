@@ -11,6 +11,19 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# --- Theme Toggle CSS ---
+if 'dark_mode' not in st.session_state:
+    st.session_state.dark_mode = True
+
+if not st.session_state.dark_mode:
+    st.markdown("""<style>
+        [data-testid="stAppViewContainer"] { background-color: #ffffff; }
+        [data-testid="stSidebar"] { background-color: #f0f2f6; }
+        [data-testid="stHeader"] { background-color: #ffffff; }
+        .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 { color: #1a1a2e !important; }
+        [data-testid="stCaptionContainer"] p { color: #555 !important; }
+    </style>""", unsafe_allow_html=True)
+
 # --- Data Loading from CSV ---
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -70,6 +83,17 @@ st.sidebar.markdown("### Shipping Operations Dashboard")
 st.sidebar.caption("SE GS C LOT OM SHP · Gasturbinen Berlin")
 st.sidebar.divider()
 
+# Theme toggle & Refresh
+col_t1, col_t2 = st.sidebar.columns(2)
+if col_t1.button("Refresh", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()
+if col_t2.button("Light" if st.session_state.dark_mode else "Dark", use_container_width=True):
+    st.session_state.dark_mode = not st.session_state.dark_mode
+    st.rerun()
+
+st.sidebar.divider()
+
 period = st.sidebar.selectbox("Period", ["Jul–Sep 2025", "Jul 2025", "Aug 2025", "Sep 2025"])
 team_filter = st.sidebar.selectbox("Team", ["All teams", "Bukarest", "Berlin", "LWF"])
 category = st.sidebar.selectbox("Category", ["All", "AWV", "NZV", "Sonstige"])
@@ -103,10 +127,6 @@ with col_h2:
     st.markdown(
         """<div style='text-align:right;padding-top:10px'>
         <span style='background:rgba(0,201,177,.12);color:#00c9b1;padding:4px 10px;border-radius:99px;font-size:11px;border:1px solid rgba(0,201,177,.3)'>● Live</span>
-        <div style='margin-top:4px;line-height:1.15;text-align:right'>
-            <span style='font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#00B2A9;letter-spacing:1.5px'>SIEMENS</span><br>
-            <span style='font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#7B2D8B;letter-spacing:0.5px'>energy</span>
-        </div>
         </div>""", unsafe_allow_html=True)
 
 active_filters = sum([period_val is not None, team_filter != "All teams", category != "All", plant != "All"])
