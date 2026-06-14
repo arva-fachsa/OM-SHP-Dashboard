@@ -61,7 +61,7 @@ def color_box(value, label, color):
 
 def dark_layout(fig, height=250):
     fig.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor=THEME_BG_CARD, plot_bgcolor="rgba(0,0,0,0)",
         font_color=THEME_CHART_FONT, height=height,
         margin=dict(t=20, b=20, l=20, r=20),
         xaxis=dict(gridcolor="rgba(42,48,80,.6)", title=""),
@@ -75,6 +75,15 @@ def dark_layout(fig, height=250):
             elif trace.type == 'pie':
                 trace.hovertemplate = '<b>%{label}</b>: %{value:,} (%{percent})<extra></extra>'
     return fig
+
+# Inject CSS to give chart containers the card border style
+st.markdown("""<style>
+[data-testid="stPlotlyChart"] {
+    border: 1px solid rgba(42,48,80,.5);
+    border-radius: 8px;
+    padding: 4px;
+}
+</style>""", unsafe_allow_html=True)
 
 # --- Sidebar Filters ---
 st.sidebar.markdown("""<div style='margin-bottom:8px;line-height:1.2;text-align:center'>
