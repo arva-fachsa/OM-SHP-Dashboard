@@ -11,26 +11,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# --- Theme Toggle CSS ---
-if 'dark_mode' not in st.session_state:
-    st.session_state.dark_mode = True
-
-THEME_TEXT = "#e8eaf2" if st.session_state.dark_mode else "#1a1a2e"
-THEME_BG_CARD = "rgba(26,31,48,.85)" if st.session_state.dark_mode else "rgba(230,235,245,.95)"
-THEME_CHART_FONT = "#e8eaf2" if st.session_state.dark_mode else "#1a1a2e"
-
-if not st.session_state.dark_mode:
-    st.markdown("""<style>
-        [data-testid="stAppViewContainer"] { background-color: #ffffff; }
-        [data-testid="stSidebar"] { background-color: #f0f2f6; }
-        [data-testid="stHeader"] { background-color: #ffffff; }
-        .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-        .stMarkdown h4, .stMarkdown h5, .stMarkdown span, .stMarkdown div { color: #1a1a2e !important; }
-        [data-testid="stCaptionContainer"] p { color: #555 !important; }
-        [data-testid="stTabs"] button { color: #1a1a2e !important; }
-        [data-testid="stTabs"] button[aria-selected="true"] { color: #00c9b1 !important; }
-        .stSelectbox label p { color: #1a1a2e !important; }
-    </style>""", unsafe_allow_html=True)
+# --- Theme (Dark only) ---
+THEME_TEXT = "#e8eaf2"
+THEME_BG_CARD = "rgba(26,31,48,.85)"
+THEME_CHART_FONT = "#e8eaf2"
 
 # --- Data Loading from CSV ---
 DATA_DIR = Path(__file__).parent / "data"
@@ -94,13 +78,9 @@ st.sidebar.markdown("### Shipping Operations Dashboard")
 st.sidebar.caption("SE GS C LOT OM SHP · Gasturbinen Berlin")
 st.sidebar.divider()
 
-# Theme toggle & Refresh
-col_t1, col_t2 = st.sidebar.columns(2)
-if col_t1.button("Refresh", use_container_width=True):
+# Refresh button
+if st.sidebar.button("Refresh", use_container_width=True):
     st.cache_data.clear()
-    st.rerun()
-if col_t2.button("Light" if st.session_state.dark_mode else "Dark", use_container_width=True):
-    st.session_state.dark_mode = not st.session_state.dark_mode
     st.rerun()
 
 st.sidebar.divider()
