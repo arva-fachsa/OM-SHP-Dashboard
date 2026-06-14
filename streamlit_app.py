@@ -66,7 +66,14 @@ def dark_layout(fig, height=250):
         margin=dict(t=20, b=20, l=20, r=20),
         xaxis=dict(gridcolor="rgba(42,48,80,.6)", title=""),
         yaxis=dict(gridcolor="rgba(42,48,80,.6)", title=""),
+        hoverlabel=dict(bgcolor="#1a1f30", font_size=12, font_color="#e8eaf2", bordercolor="#2a3050"),
     )
+    for trace in fig.data:
+        if hasattr(trace, 'type'):
+            if trace.type == 'bar':
+                trace.hovertemplate = '<b>%{x}</b>: %{y:,}<extra></extra>' if trace.orientation != 'h' else '<b>%{y}</b>: %{x:,}<extra></extra>'
+            elif trace.type == 'pie':
+                trace.hovertemplate = '<b>%{label}</b>: %{value:,} (%{percent})<extra></extra>'
     return fig
 
 # --- Sidebar Filters ---
@@ -184,7 +191,8 @@ with tab_dm:
         with subtab_st:
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.subheader("Transport Mode")
+                st.markdown("**B1 · Transport Mode**")
+                st.caption("TRATY_Code field")
                 traty_map = {"T": "LKW Ladung", "C": "Kurier", "ZZZ": "NzV billing", "LT": "Sammelgut", "A": "Luftfracht", "S": "Seefracht"}
                 traty_colors = {"T": "#2ecc71", "C": "#4a90d9", "ZZZ": "#f39c12", "LT": "#7b85a8", "A": "#7b85a8", "S": "#7b85a8"}
                 traty = dm["TRATY_CODE"].value_counts().head(6)
@@ -198,14 +206,16 @@ with tab_dm:
                 st.markdown(rows_html, unsafe_allow_html=True)
 
             with col2:
-                st.subheader("ECC Customs")
+                st.markdown("**B2 · ECC Customs**")
+                st.caption("Liefersperre field")
                 zh = len(dm[dm["LIEFERSPERRE"] == "ZH"])
                 ze = len(dm[dm["LIEFERSPERRE"] == "ZE"])
                 z1 = len(dm[dm["LIEFERSPERRE"] == "Z1"])
                 st.markdown(f"<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px'>{color_box(zh,'ZH released','#2ecc71')}{color_box(ze,'ZE blocked','#e74c3c')}{color_box(z1,'Z1 partial','#f39c12')}</div>", unsafe_allow_html=True)
 
             with col3:
-                st.subheader("Transport Lock")
+                st.markdown("**B3 · Transport Lock**")
+                st.caption("Transportsperrgrund")
                 l3 = len(dm[dm["TRANSPORTSPERRGRUND"] == "3.0"])
                 l2 = len(dm[dm["TRANSPORTSPERRGRUND"] == "2.0"])
                 l_other = total - l3 - l2
@@ -223,10 +233,13 @@ with tab_dm:
             st.plotly_chart(dark_layout(fig, 300), use_container_width=True)
 
         with subtab_rts:
+            st.markdown("**D · READY TO SHIP**")
             ready = len(dm[(dm["LIEFERSPERRE"] == "ZH") & (dm["TRANSPORTSPERRGRUND"] == "3.0") &
                            (dm["TRATY_CODE"] != "ZZZ") & (dm["NZV_FLAG"] == "Nein")])
             not_ready = total - ready
-            st.caption('Liefersperre="ZH" AND Transportsperrgrund=3 AND TRATY_Code!="ZZZ" AND NZV_Flag="Nein"')
+            st.markdown(f"""<div style='background:{THEME_BG_CARD};border:1px solid rgba(42,48,80,.5);border-radius:10px;padding:14px 16px;margin-bottom:12px'>
+            <div style='font-size:13px;font-weight:600;color:{THEME_TEXT}'>Ready to ship formula</div>
+            <div style='font-size:11px;color:#00c9b1;font-style:italic;margin-top:2px'>Liefersperre="ZH" AND Transportsperrgrund=3 AND TRATY_Code≠"ZZZ" AND NZV_Flag="Nein"</div></div>""", unsafe_allow_html=True)
             r1, r2 = st.columns(2)
             with r1:
                 st.markdown(f"""<div style='background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.25);border-radius:12px;padding:20px;text-align:center'>
@@ -239,7 +252,16 @@ with tab_dm:
                 <div style='font-size:14px;color:#e74c3c'>Not ready</div>
                 <div style='font-size:12px;color:rgba(231,76,60,.7)'>{safe_pct(not_ready, total)} of total</div></div>""", unsafe_allow_html=True)
 
+            # Schedule by month
+            st.markdown("**C · SCHEDULE BY MONTH**")
+            months_rts = dm["MONTH"].value_counts().sort_index()
+            month_names_rts = {"2025-07": "Jul 2025", "2025-08": "Aug 2025", "2025-09": "Sep 2025"}
+            mc = st.columns(len(months_rts)) if len(months_rts) > 0 else []
+            for i, (m, cnt) in enumerate(months_rts.items()):
+                mc[i].markdown(kpi_card(month_names_rts.get(m, m), f"{cnt:,}", None, safe_pct(cnt, total) + " of quarter"), unsafe_allow_html=True)
+
         with subtab_bn:
+            st.markdown("**E · BOTTLENECKS**")
             nzv_zzz = len(dm[dm["TRATY_CODE"] == "ZZZ"])
             ecc_ze = len(dm[dm["LIEFERSPERRE"] == "ZE"])
             nzv_fl = len(dm[dm["NZV_FLAG"] == "Ja"])
@@ -248,14 +270,18 @@ with tab_dm:
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("Open Blockers")
-                blockers = [("E1 · NzV billing (ZZZ)", nzv_zzz, "#f39c12"), ("E2 · ECC blocked (ZE)", ecc_ze, "#e74c3c"),
-                            ("E3 · NZV flag active", nzv_fl, "#f39c12"), ("E4 · Transport locked", lock_02, "#e74c3c"),
-                            ("E5 · ECC partial (Z1)", ecc_z1, "#7b85a8")]
+                blockers = [
+                    ("E1 · NzV billing (ZZZ)", 'TRATY_Code = "ZZZ"', nzv_zzz, "#f39c12"),
+                    ("E2 · ECC blocked (ZE)", 'Liefersperre = "ZE"', ecc_ze, "#e74c3c"),
+                    ("E3 · NZV flag active", 'NZV_Flag = "Ja"', nzv_fl, "#f39c12"),
+                    ("E4 · Transport locked", 'Transportsperrgrund = 2', lock_02, "#e74c3c"),
+                    ("E5 · ECC partial (Z1)", 'Liefersperre = "Z1"', ecc_z1, "#7b85a8"),
+                ]
                 rows_html = ""
-                for label, val, color in blockers:
-                    rows_html += f"""<div style='display:flex;justify-content:space-between;align-items:center;padding:6px 9px;background:#181c27;border-radius:6px;border:1px solid #2a3050;margin-bottom:4px'>
-                    <span style='font-size:11px;color:{THEME_TEXT}'>{label}</span>
-                    <span style='font-size:12px;font-weight:500;color:{color}'>{val:,}</span></div>"""
+                for label, sub, val, color in blockers:
+                    rows_html += f"""<div style='display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#181c27;border-radius:6px;border:1px solid #2a3050;margin-bottom:4px'>
+                    <div><div style='font-size:11px;color:{THEME_TEXT}'>{label}</div><div style='font-size:9px;color:#7b85a8;font-style:italic'>{sub}</div></div>
+                    <span style='font-size:13px;font-weight:500;color:{color}'>{val:,}</span></div>"""
                 st.markdown(rows_html, unsafe_allow_html=True)
             with col2:
                 st.subheader("Blocker Distribution")
@@ -266,19 +292,19 @@ with tab_dm:
                     st.plotly_chart(dark_layout(fig, 300), use_container_width=True)
 
         with subtab_sp:
-            st.subheader("NZV Special Cases")
+            st.markdown("**F · SPECIAL CASES — NZV**")
             wth12 = len(dm[dm["AUSWERTUNG"].str.contains("WTH 0012", na=False)])
             wth09 = len(dm[dm["AUSWERTUNG"].str.contains("WTH 0009", na=False)])
             wth10 = len(dm[dm["AUSWERTUNG"].str.contains("WTH 0010", na=False)])
             sonstige = len(dm[dm["AUSWERTUNG"].str.contains("Sonstige", na=False)])
             c1, c2, c3 = st.columns(3)
-            c1.markdown(kpi_card("NZV flag", f"{nzv_flag:,}", "#f39c12"), unsafe_allow_html=True)
-            c2.markdown(kpi_card("NzV transport", f"{nzv_traty:,}", "#f39c12"), unsafe_allow_html=True)
-            c3.markdown(kpi_card("WTH 0012", f"{wth12:,}", "#f39c12"), unsafe_allow_html=True)
+            c1.markdown(kpi_card("NZV flag", f"{nzv_flag:,}", "#f39c12", 'NZV_Flag = "Ja"'), unsafe_allow_html=True)
+            c2.markdown(kpi_card("NzV transport", f"{nzv_traty:,}", "#f39c12", 'TRATY_Code = "ZZZ"'), unsafe_allow_html=True)
+            c3.markdown(kpi_card("WTH 0012 category", f"{wth12:,}", "#f39c12", "Auswertung NzV"), unsafe_allow_html=True)
             c4, c5, c6 = st.columns(3)
-            c4.markdown(kpi_card("AWV SAP EU", f"{wth09:,}", "#00c9b1"), unsafe_allow_html=True)
-            c5.markdown(kpi_card("AWV ohne KanLog", f"{wth10:,}", "#00c9b1"), unsafe_allow_html=True)
-            c6.markdown(kpi_card("Sonstige", f"{sonstige:,}", "#7b85a8"), unsafe_allow_html=True)
+            c4.markdown(kpi_card("AWV with SAP EU", f"{wth09:,}", "#00c9b1", "WTH 0009"), unsafe_allow_html=True)
+            c5.markdown(kpi_card("AWV ohne KanLog", f"{wth10:,}", "#00c9b1", "WTH 0010 DE"), unsafe_allow_html=True)
+            c6.markdown(kpi_card("Sonstige", f"{sonstige:,}", "#7b85a8", "Not categorised"), unsafe_allow_html=True)
 
 # ===========================================================
 # KANLOG
