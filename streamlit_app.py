@@ -59,15 +59,24 @@ def color_box(value, label, color):
     <div style='font-size:18px;font-weight:500;color:{color}'>{value:,}</div>
     <div style='font-size:9px;color:{color}'>{label}</div></div>"""
 
-def dark_layout(fig, height=250):
+def dark_layout(fig, height=250, title="", subtitle=""):
     fig.update_layout(
         paper_bgcolor=THEME_BG_CARD, plot_bgcolor="rgba(0,0,0,0)",
         font_color=THEME_CHART_FONT, height=height,
-        margin=dict(t=20, b=20, l=20, r=20),
+        margin=dict(t=50 if title else 20, b=20, l=20, r=20),
         xaxis=dict(gridcolor="rgba(42,48,80,.6)", title=""),
         yaxis=dict(gridcolor="rgba(42,48,80,.6)", title=""),
         hoverlabel=dict(bgcolor="#1a1f30", font_size=12, font_color="#e8eaf2", bordercolor="#2a3050"),
     )
+    if title:
+        fig.update_layout(
+            title=dict(
+                text=f"<b>{title}</b><br><span style='font-size:10px;color:#7b85a8;font-style:italic'>{subtitle}</span>" if subtitle else f"<b>{title}</b>",
+                x=0.02, y=0.97, xanchor="left", yanchor="top",
+                font=dict(size=13, color=THEME_TEXT),
+            ),
+            margin=dict(t=55, b=20, l=20, r=20),
+        )
     for trace in fig.data:
         if hasattr(trace, 'type'):
             if trace.type == 'bar':
@@ -170,17 +179,13 @@ with tab_dm:
 
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("**Team Assignment**")
-                st.caption(f"TEAM · {total:,} deliveries")
                 team_counts = dm["TEAM"].value_counts().reset_index()
                 team_counts.columns = ["Team", "Count"]
                 fig = px.pie(team_counts, values="Count", names="Team",
                              color_discrete_sequence=["#9b59d0", "#00c9b1", "#f39c12"], hole=0.55)
-                st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
+                st.plotly_chart(dark_layout(fig, 280, "Team Assignment", f"TEAM · {total:,} deliveries"), use_container_width=True)
 
             with col2:
-                st.markdown("**Monthly Volume**")
-                st.caption(f"MONTH · {total:,} deliveries")
                 month_counts = dm["MONTH"].value_counts().sort_index().reset_index()
                 month_counts.columns = ["Month", "Count"]
                 month_names = {"2025-07": "Jul 2025", "2025-08": "Aug 2025", "2025-09": "Sep 2025"}
@@ -188,7 +193,7 @@ with tab_dm:
                 fig = px.bar(month_counts, x="Label", y="Count", color_discrete_sequence=["#9b59d0"],
                              category_orders={"Label": ["Jul 2025", "Aug 2025", "Sep 2025"]})
                 fig.update_layout(xaxis_type="category")
-                st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
+                st.plotly_chart(dark_layout(fig, 280, "Monthly Volume", f"MONTH · {total:,} deliveries"), use_container_width=True)
 
             st.markdown("**Auswertung Categories**")
             st.caption(f"AUSWERTUNG · top 6 of {total:,}")
@@ -235,15 +240,13 @@ with tab_dm:
                 if l2 > 0:
                     st.markdown(f"<div style='background:rgba(0,201,177,.08);border:1px solid rgba(0,201,177,.2);border-radius:6px;padding:7px 10px;font-size:10px;color:#00c9b1;margin-top:8px'>{l2} locked deliveries (02) need action</div>", unsafe_allow_html=True)
 
-            st.markdown("**Top Destination Countries**")
-            st.caption(f"LAND_ENDKUNDE · {total:,} deliveries")
             countries = dm["LAND_ENDKUNDE"].value_counts().head(8).reset_index()
             countries.columns = ["Country", "Count"]
             bar_colors = ["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#e74c3c", "#2ecc71", "#7b85a8", "#854F0B"]
             fig = go.Figure(go.Bar(x=countries["Count"].tolist(), y=countries["Country"].tolist(), orientation="h",
                                    marker_color=bar_colors[:len(countries)]))
             fig.update_layout(yaxis=dict(autorange="reversed"))
-            st.plotly_chart(dark_layout(fig, 300), use_container_width=True)
+            st.plotly_chart(dark_layout(fig, 330, "Top Destination Countries", f"LAND_ENDKUNDE · {total:,} deliveries"), use_container_width=True)
 
         with subtab_rts:
             st.markdown("**D · READY TO SHIP**")
@@ -297,13 +300,11 @@ with tab_dm:
                     <span style='font-size:13px;font-weight:500;color:{color}'>{val:,}</span></div>"""
                 st.markdown(rows_html, unsafe_allow_html=True)
             with col2:
-                st.markdown("**Blocker Distribution**")
-                st.caption("Share of open blockers")
                 if sum([nzv_zzz, ecc_ze, nzv_fl, lock_02, ecc_z1]) > 0:
                     fig = px.pie(values=[nzv_zzz, ecc_ze, nzv_fl, lock_02, ecc_z1],
                                  names=["NzV ZZZ", "ECC ZE", "NZV flag", "Lock 02", "Z1"],
                                  color_discrete_sequence=["#f39c12", "#e74c3c", "#854F0B", "#c0392b", "#7b85a8"], hole=0.5)
-                    st.plotly_chart(dark_layout(fig, 300), use_container_width=True)
+                    st.plotly_chart(dark_layout(fig, 330, "Blocker Distribution", "Share of open blockers"), use_container_width=True)
 
         with subtab_sp:
             st.markdown("**F · SPECIAL CASES — NZV**")
@@ -346,8 +347,6 @@ with tab_kl:
 
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("**Monthly Shipments by Team**")
-                st.caption(f"MONTH × TEAM · {kl_total:,} shipments")
                 monthly_team = kl.groupby(["MONTH", "TEAM"]).size().reset_index(name="Count")
                 month_labels = {"2025-07": "Jul 2025", "2025-08": "Aug 2025", "2025-09": "Sep 2025"}
                 monthly_team["Label"] = monthly_team["MONTH"].map(month_labels).fillna(monthly_team["MONTH"])
@@ -355,15 +354,13 @@ with tab_kl:
                              color_discrete_map={"Bukarest": "#9b59d0", "Berlin": "#00c9b1"}, barmode="stack",
                              category_orders={"Label": ["Jul 2025", "Aug 2025", "Sep 2025"]})
                 fig.update_layout(legend_title="", xaxis_type="category")
-                st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
+                st.plotly_chart(dark_layout(fig, 280, "Monthly Shipments by Team", f"MONTH × TEAM · {kl_total:,} shipments"), use_container_width=True)
             with col2:
-                st.markdown("**Business area split**")
-                st.caption(f"Geschaeftsgebiet_Kz · {kl_total:,} shipments")
                 areas = kl["GESCHAEFTSGEBIET_KZ"].value_counts().reset_index()
                 areas.columns = ["Area", "Count"]
                 fig = px.pie(areas, values="Count", names="Area",
                              color_discrete_sequence=["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#7b85a8"], hole=0.55)
-                st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
+                st.plotly_chart(dark_layout(fig, 280, "Business area split", f"Geschaeftsgebiet_Kz · {kl_total:,} shipments"), use_container_width=True)
 
         with subtab_geo:
             countries_kl = kl["LANDNAME_ENDVERW"].value_counts()
@@ -376,15 +373,13 @@ with tab_kl:
             c3.markdown(kpi_card("Domestic DE", f"{domestic:,}", "#00c9b1", "Landname_Endverw = DE"), unsafe_allow_html=True)
             c4.markdown(kpi_card("International", f"{kl_total - domestic:,}", None, "Landname_Endverw ≠ DE"), unsafe_allow_html=True)
 
-            st.markdown("**Top 10 Destination Countries**")
-            st.caption(f"Landname_Endverw · {kl_total:,} shipments")
             top_countries = countries_kl[countries_kl.index != ""].head(10).reset_index()
             top_countries.columns = ["Country", "Count"]
             geo_colors = ["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#e74c3c", "#2ecc71", "#7b85a8", "#854F0B", "#1abc9c", "#c0392b"]
             fig = go.Figure(go.Bar(x=top_countries["Count"].tolist(), y=top_countries["Country"].tolist(),
                                    orientation="h", marker_color=geo_colors[:len(top_countries)]))
             fig.update_layout(yaxis=dict(autorange="reversed"))
-            st.plotly_chart(dark_layout(fig, 350), use_container_width=True)
+            st.plotly_chart(dark_layout(fig, 380, "Top 10 Destination Countries", f"Landname_Endverw · {kl_total:,} shipments"), use_container_width=True)
 
         with subtab_proj:
             projects = kl["PROJKENNW"].value_counts()
@@ -443,9 +438,7 @@ with tab_kl:
                     <span style='font-size:12px;font-weight:500;color:{color}'>{cnt:,} ({safe_pct(cnt, kl_total)})</span></div>"""
                 st.markdown(rows_html, unsafe_allow_html=True)
             with col2:
-                st.markdown("**Freight Forwarder Hubs**")
-                st.caption(f"Stadt_Warbe_VB · {kl_total:,} shipments")
                 ff_ops = kl[kl["STADT_WARBE_VB"] != ""]["STADT_WARBE_VB"].value_counts().head(5).reset_index()
                 ff_ops.columns = ["City", "Count"]
                 fig = px.bar(ff_ops, x="City", y="Count", color_discrete_sequence=["#00c9b1"])
-                st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
+                st.plotly_chart(dark_layout(fig, 280, "Freight Forwarder Hubs", f"Stadt_Warbe_VB · {kl_total:,} shipments"), use_container_width=True)
