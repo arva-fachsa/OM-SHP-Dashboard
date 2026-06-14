@@ -216,8 +216,8 @@ with tab_dm:
             with col3:
                 st.markdown("**B3 · Transport Lock**")
                 st.caption("Transportsperrgrund")
-                l3 = len(dm[dm["TRANSPORTSPERRGRUND"] == "3.0"])
-                l2 = len(dm[dm["TRANSPORTSPERRGRUND"] == "2.0"])
+                l3 = len(dm[dm["TRANSPORTSPERRGRUND"] == 3.0])
+                l2 = len(dm[dm["TRANSPORTSPERRGRUND"] == 2.0])
                 l_other = total - l3 - l2
                 st.markdown(f"<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px'>{color_box(l3,'Released (03)','#2ecc71')}{color_box(l2,'Locked (02)','#e74c3c')}{color_box(l_other,'Freigegeben','#f39c12')}</div>", unsafe_allow_html=True)
                 if l2 > 0:
@@ -234,7 +234,7 @@ with tab_dm:
 
         with subtab_rts:
             st.markdown("**D · READY TO SHIP**")
-            ready = len(dm[(dm["LIEFERSPERRE"] == "ZH") & (dm["TRANSPORTSPERRGRUND"] == "3.0") &
+            ready = len(dm[(dm["LIEFERSPERRE"] == "ZH") & (dm["TRANSPORTSPERRGRUND"] == 3.0) &
                            (dm["TRATY_CODE"] != "ZZZ") & (dm["NZV_FLAG"] == "Nein")])
             not_ready = total - ready
             st.markdown(f"""<div style='background:{THEME_BG_CARD};border:1px solid rgba(42,48,80,.5);border-radius:10px;padding:14px 16px;margin-bottom:12px'>
@@ -265,7 +265,7 @@ with tab_dm:
             nzv_zzz = len(dm[dm["TRATY_CODE"] == "ZZZ"])
             ecc_ze = len(dm[dm["LIEFERSPERRE"] == "ZE"])
             nzv_fl = len(dm[dm["NZV_FLAG"] == "Ja"])
-            lock_02 = len(dm[dm["TRANSPORTSPERRGRUND"] == "2.0"])
+            lock_02 = len(dm[dm["TRANSPORTSPERRGRUND"] == 2.0])
             ecc_z1 = len(dm[dm["LIEFERSPERRE"] == "Z1"])
             col1, col2 = st.columns(2)
             with col1:
