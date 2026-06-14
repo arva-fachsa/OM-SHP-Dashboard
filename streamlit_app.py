@@ -319,15 +319,16 @@ with tab_kl:
         subtab_vol, subtab_geo, subtab_proj, subtab_ops = st.tabs(["Volume", "Geography", "Projects", "Operations"])
 
         with subtab_vol:
+            st.markdown("**VOLUME OVERVIEW**")
             kl_invoices = kl["RECHNR"].nunique()
             kl_months = kl["MONTH"].nunique()
             c1, c2, c3, c4, c5, c6 = st.columns(6)
-            c1.markdown(kpi_card("Total shipments", f"{kl_total:,}"), unsafe_allow_html=True)
+            c1.markdown(kpi_card("Total shipments", f"{kl_total:,}", None, "filtered"), unsafe_allow_html=True)
             c2.markdown(kpi_card("Bukarest", f"{kl_bukarest:,}", "#9b59d0", safe_pct(kl_bukarest, kl_total)), unsafe_allow_html=True)
             c3.markdown(kpi_card("Berlin", f"{kl_berlin:,}", "#00c9b1", safe_pct(kl_berlin, kl_total)), unsafe_allow_html=True)
-            c4.markdown(kpi_card("Avg / month", f"{kl_total // max(1, kl_months):,}"), unsafe_allow_html=True)
-            c5.markdown(kpi_card("Invoices", f"{kl_invoices:,}"), unsafe_allow_html=True)
-            c6.markdown(kpi_card("Ships / invoice", f"{kl_total/max(1,kl_invoices):.1f}", "#2ecc71"), unsafe_allow_html=True)
+            c4.markdown(kpi_card("Avg / month", f"{kl_total // max(1, kl_months):,}", None, f"{kl_months} / months"), unsafe_allow_html=True)
+            c5.markdown(kpi_card("Invoices", f"{kl_invoices:,}", None, "Distinct Rechnr"), unsafe_allow_html=True)
+            c6.markdown(kpi_card("Ships / invoice", f"{kl_total/max(1,kl_invoices):.1f}", "#2ecc71", "Ratio"), unsafe_allow_html=True)
 
             col1, col2 = st.columns(2)
             with col1:
@@ -341,11 +342,14 @@ with tab_kl:
                 fig.update_layout(legend_title="", xaxis_type="category")
                 st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
             with col2:
-                st.subheader("Business Area Split")
+                st.markdown("**Business area volume**")
+                st.caption("Shipments per Geschaeftsgebiet_Kz")
                 areas = kl["GESCHAEFTSGEBIET_KZ"].value_counts().reset_index()
                 areas.columns = ["Area", "Count"]
-                fig = px.pie(areas, values="Count", names="Area",
-                             color_discrete_sequence=["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#7b85a8"], hole=0.55)
+                area_colors = ["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#7b85a8"]
+                fig = go.Figure(go.Bar(x=areas["Area"].tolist(), y=areas["Count"].tolist(),
+                                       marker_color=area_colors[:len(areas)]))
+                fig.update_layout(xaxis_type="category")
                 st.plotly_chart(dark_layout(fig, 250), use_container_width=True)
 
         with subtab_geo:
@@ -354,16 +358,18 @@ with tab_kl:
             transit_de = len(kl[kl["LANDNAME_FM"] == "Deutschland"])
             domestic = len(kl[kl["LANDNAME_ENDVERW"] == "Deutschland"])
             c1, c2, c3, c4 = st.columns(4)
-            c1.markdown(kpi_card("Dest. countries", f"{n_countries}"), unsafe_allow_html=True)
-            c2.markdown(kpi_card("Transit via DE", f"{transit_de:,}", "#2ecc71"), unsafe_allow_html=True)
-            c3.markdown(kpi_card("Domestic DE", f"{domestic:,}", "#00c9b1"), unsafe_allow_html=True)
-            c4.markdown(kpi_card("International", f"{kl_total - domestic:,}"), unsafe_allow_html=True)
+            c1.markdown(kpi_card("Dest. countries", f"{n_countries}", None, "Landname_Endverw distinct"), unsafe_allow_html=True)
+            c2.markdown(kpi_card("Transit via DE", f"{transit_de:,}", "#2ecc71", "Landname_FM = Deutschland"), unsafe_allow_html=True)
+            c3.markdown(kpi_card("Domestic DE", f"{domestic:,}", "#00c9b1", "Landname_Endverw = DE"), unsafe_allow_html=True)
+            c4.markdown(kpi_card("International", f"{kl_total - domestic:,}", None, "Landname_Endverw ≠ DE"), unsafe_allow_html=True)
 
             st.subheader("Top 10 Destination Countries")
+            st.caption("Landname_Endverw")
             top_countries = countries_kl[countries_kl.index != ""].head(10).reset_index()
             top_countries.columns = ["Country", "Count"]
+            geo_colors = ["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#e74c3c", "#2ecc71", "#7b85a8", "#854F0B", "#1abc9c", "#c0392b"]
             fig = go.Figure(go.Bar(x=top_countries["Count"].tolist(), y=top_countries["Country"].tolist(),
-                                   orientation="h", marker_color="#9b59d0"))
+                                   orientation="h", marker_color=geo_colors[:len(top_countries)]))
             fig.update_layout(yaxis=dict(autorange="reversed"))
             st.plotly_chart(dark_layout(fig, 350), use_container_width=True)
 
@@ -378,12 +384,13 @@ with tab_kl:
             top_proj.columns = ["Project", "Area", "Team", "Shipments"]
 
             c1, c2, c3 = st.columns(3)
-            c1.markdown(kpi_card("Active projects", f"{len(projects_valid)}"), unsafe_allow_html=True)
+            c1.markdown(kpi_card("Active projects", f"{len(projects_valid)}", None, "Distinct Projkennw"), unsafe_allow_html=True)
             c2.markdown(kpi_card("Top project", f"{top_proj.iloc[0]['Shipments']}" if len(top_proj) > 0 else "0", "#00c9b1",
                                  top_proj.iloc[0]["Project"] if len(top_proj) > 0 else ""), unsafe_allow_html=True)
-            c3.markdown(kpi_card("Top 5 share", safe_pct(top_proj.head(5)["Shipments"].sum(), kl_total)), unsafe_allow_html=True)
+            c3.markdown(kpi_card("Top 5 share", safe_pct(top_proj.head(5)["Shipments"].sum(), kl_total), None, "% of total shipments"), unsafe_allow_html=True)
 
             st.subheader("Top 12 Projects")
+            st.caption("Projkennw · Geschaeftsgebiet_Kz · Team")
             st.dataframe(top_proj, use_container_width=True, hide_index=True)
 
         with subtab_ops:
@@ -393,16 +400,17 @@ with tab_kl:
             kollonrs = kl["KOLLONR_LIEFERANT"].nunique()
             orgs = kl[kl["ORG_ID_ABSENDER"] != ""]["ORG_ID_ABSENDER"].nunique()
             c1, c2, c3, c4, c5, c6 = st.columns(6)
-            c1.markdown(kpi_card("Transport orders", f"{tv_nrs:,}"), unsafe_allow_html=True)
-            c2.markdown(kpi_card("Pack orders", f"{packs:,}"), unsafe_allow_html=True)
-            c3.markdown(kpi_card("Invoices", f"{invoices:,}"), unsafe_allow_html=True)
-            c4.markdown(kpi_card("Ships / invoice", f"{kl_total/max(1,invoices):.1f}", "#2ecc71"), unsafe_allow_html=True)
-            c5.markdown(kpi_card("Unique suppliers", f"{kollonrs:,}"), unsafe_allow_html=True)
-            c6.markdown(kpi_card("ORG senders", f"{orgs}", "#00c9b1"), unsafe_allow_html=True)
+            c1.markdown(kpi_card("Transport orders", f"{tv_nrs:,}", None, "Distinct TV_Nr"), unsafe_allow_html=True)
+            c2.markdown(kpi_card("Pack orders", f"{packs:,}", None, "Distinct Packnr"), unsafe_allow_html=True)
+            c3.markdown(kpi_card("Invoices", f"{invoices:,}", None, "Distinct Rechnr"), unsafe_allow_html=True)
+            c4.markdown(kpi_card("Ships / invoice", f"{kl_total/max(1,invoices):.1f}", "#2ecc71", "Ratio"), unsafe_allow_html=True)
+            c5.markdown(kpi_card("Unique suppliers", f"{kollonrs:,}", None, "Distinct Kollonr_Lieferant"), unsafe_allow_html=True)
+            c6.markdown(kpi_card("ORG senders", f"{orgs}", "#00c9b1", "Distinct Org_ID_Absender"), unsafe_allow_html=True)
 
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("Sender Organisations")
+                st.caption("Org_ID_Absender")
                 org_counts = kl["ORG_ID_ABSENDER"].value_counts().head(5)
                 rows_html = ""
                 for org_id, cnt in org_counts.items():
@@ -413,7 +421,8 @@ with tab_kl:
                     <span style='font-size:12px;font-weight:500;color:{color}'>{cnt:,} ({safe_pct(cnt, kl_total)})</span></div>"""
                 st.markdown(rows_html, unsafe_allow_html=True)
             with col2:
-                st.subheader("Freight Forwarder Hubs")
+                st.markdown("**Freight Forwarder Hubs**")
+                st.caption("Stadt_Warbe_VB · City where FF picks up the shipment")
                 ff_ops = kl[kl["STADT_WARBE_VB"] != ""]["STADT_WARBE_VB"].value_counts().head(5).reset_index()
                 ff_ops.columns = ["City", "Count"]
                 fig = px.bar(ff_ops, x="City", y="Count", color_discrete_sequence=["#00c9b1"])
