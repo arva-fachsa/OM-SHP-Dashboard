@@ -150,7 +150,7 @@ if team_filter != "All teams":
 # --- Header ---
 col_h1, col_h2 = st.columns([3, 1])
 with col_h1:
-    st.markdown("# Shipping Operations Dashboard")
+    st.markdown("# OM SHP Dashboard")
 with col_h2:
     st.markdown(
         """<div style='text-align:right;padding-top:10px'>
