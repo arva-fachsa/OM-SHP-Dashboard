@@ -12,21 +12,23 @@ REM =============================================================
 
 cd /d "c:\Data Warehouse FY26\streamlit_cloud_app"
 
-REM Prüfe ob es überhaupt Änderungen gibt
-git status --porcelain >nul 2>nul
-git diff --quiet 2>nul && git diff --cached --quiet 2>nul && (
-    echo [INFO] Keine Aenderungen gefunden - nichts zu tun.
-    pause
-    exit /b 0
-)
-
 REM Timestamp für Commit-Message
 for /f "tokens=1-3 delims=/ " %%a in ('date /t') do set DATUM=%%c-%%b-%%a
 for /f "tokens=1-2 delims=: " %%a in ('time /t') do set ZEIT=%%a:%%b
 
-REM Stage ALLES, Commit, Push
+REM Stage alle Änderungen (falls vorhanden)
 git add -A
-git commit -m "update %DATUM% %ZEIT%"
+
+REM Commit (falls es was zu committen gibt)
+git diff --cached --quiet 2>nul
+if not %errorlevel%==0 (
+    git commit -m "update %DATUM% %ZEIT%"
+    echo [OK] Aenderungen committed.
+) else (
+    echo [INFO] Nichts Neues zu committen.
+)
+
+REM IMMER pushen (auch wenn nur alte commits noch nicht gepusht waren)
 git push origin main
 
 if %errorlevel%==0 (
