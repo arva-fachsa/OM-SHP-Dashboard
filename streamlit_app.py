@@ -8,7 +8,7 @@ from PIL import Image
 _favicon = Image.open(Path(__file__).parent / "assets" / "se_favicon.ico")
 
 st.set_page_config(
-    page_title="Shipping Operations Dashboard",
+    page_title="OM SHP Dashboard",
     page_icon=_favicon,
     layout="wide",
     initial_sidebar_state="expanded",
@@ -110,10 +110,7 @@ h3 {
 </style>""", unsafe_allow_html=True)
 
 # --- Sidebar Filters ---
-st.sidebar.markdown("""<div style='margin-bottom:8px;line-height:1.2;text-align:center'>
-<span style='font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#00B2A9;letter-spacing:1.5px'>SIEMENS</span><br>
-<span style='font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#7B2D8B;letter-spacing:0.5px'>energy</span>
-</div>""", unsafe_allow_html=True)
+
 st.sidebar.markdown("### Shipping Operations Dashboard")
 st.sidebar.caption("SE GS C LGT OM SHP ·  Gasturbinenwerk Berlin")
 st.sidebar.divider()
