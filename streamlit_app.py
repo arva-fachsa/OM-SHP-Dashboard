@@ -6,7 +6,7 @@ from pathlib import Path
 
 st.set_page_config(
     page_title="Shipping Operations Dashboard",
-    page_icon="🚢",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -164,7 +164,7 @@ if active_filters > 0:
 # ===========================================================
 # DELIVERY MONITOR
 # ===========================================================
-tab_dm, tab_kl = st.tabs(["📦 Delivery Monitor", "🚚 KanLog"])
+tab_dm, tab_kl = st.tabs(["Delivery Monitor", "KanLog"])
 
 with tab_dm:
     total = len(dm)
