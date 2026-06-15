@@ -112,7 +112,7 @@ st.sidebar.markdown("""<div style='margin-bottom:8px;line-height:1.2;text-align:
 <span style='font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#7B2D8B;letter-spacing:0.5px'>energy</span>
 </div>""", unsafe_allow_html=True)
 st.sidebar.markdown("### Shipping Operations Dashboard")
-st.sidebar.caption("SE GS C LOT OM SHP · Gasturbinen Berlin")
+st.sidebar.caption("SE GS C LGT OM SHP · Gasturbinenwerk Berlin")
 st.sidebar.divider()
 
 # Refresh button
