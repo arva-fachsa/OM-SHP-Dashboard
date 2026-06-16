@@ -14,6 +14,34 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# --- Password Protection ---
+def check_password():
+    """Simple password gate for dashboard access."""
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    if st.session_state.authenticated:
+        return True
+    st.markdown("""
+    <div style='text-align:center; padding-top:80px;'>
+        <h2 style='color:#e8eaf2;'>Shipping Operations Dashboard</h2>
+        <p style='color:#7b85a8;'>SE GS C LGT OM SHP</p>
+    </div>
+    """, unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        pwd = st.text_input("Passwort eingeben:", type="password", key="pwd_input")
+        if st.button("Anmelden", use_container_width=True):
+            correct = st.secrets.get("dashboard_password", "SE-Dashboard-2025")
+            if pwd == correct:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Falsches Passwort.")
+    return False
+
+if not check_password():
+    st.stop()
+
 # --- Theme (Dark only) ---
 THEME_TEXT = "#e8eaf2"
 THEME_BG_CARD = "rgba(26,31,48,.85)"

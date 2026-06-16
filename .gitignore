@@ -1,0 +1,2 @@
+# Secrets (passwords, API keys)
+.streamlit/secrets.toml
