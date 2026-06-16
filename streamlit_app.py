@@ -251,16 +251,27 @@ with tab_dm:
                 <span style='font-size:12px;font-weight:500;color:{THEME_TEXT}'>{cnt:,}</span></div>"""
             st.markdown(rows_html, unsafe_allow_html=True)
 
-            # Monthly trend line chart
-            trend_data = dm.groupby("MONTH").size().reset_index(name="Deliveries")
-            trend_data = trend_data.sort_values("MONTH")
-            month_names_trend = {"2025-07": "Jul", "2025-08": "Aug", "2025-09": "Sep"}
-            trend_data["Label"] = trend_data["MONTH"].map(month_names_trend).fillna(trend_data["MONTH"])
-            fig = px.line(trend_data, x="Label", y="Deliveries", markers=True,
-                          color_discrete_sequence=["#00c9b1"])
-            fig.update_traces(line_width=3, marker_size=8)
-            fig.update_layout(xaxis_type="category")
-            st.plotly_chart(dark_layout(fig, 250, "Delivery Trend", f"Monthly delivery count · {total:,} total"), use_container_width=True)
+            # Monthly volume grouped bar chart (like Anton's PowerBI)
+            cat_map = {}
+            for val in dm["AUSWERTUNG"].unique():
+                if "0009" in str(val):
+                    cat_map[val] = "AWV EU+ROW (0009)"
+                elif "0010" in str(val):
+                    cat_map[val] = "AWV DE (0010)"
+                elif "0012" in str(val):
+                    cat_map[val] = "NZV (0012)"
+            dm_trend = dm[dm["AUSWERTUNG"].isin(cat_map.keys())].copy()
+            dm_trend["Category"] = dm_trend["AUSWERTUNG"].map(cat_map)
+            trend_grouped = dm_trend.groupby(["MONTH", "Category"]).size().reset_index(name="Count")
+            month_names_trend = {"2025-07": "Juli", "2025-08": "August", "2025-09": "September"}
+            trend_grouped["Monat"] = trend_grouped["MONTH"].map(month_names_trend).fillna(trend_grouped["MONTH"])
+            fig = px.bar(trend_grouped, x="Monat", y="Count", color="Category",
+                         color_discrete_map={"AWV EU+ROW (0009)": "#1a1a5e", "AWV DE (0010)": "#6b4c9a", "NZV (0012)": "#4a90d9"},
+                         barmode="group", text="Count",
+                         category_orders={"Monat": ["Juli", "August", "September"]})
+            fig.update_traces(textposition="outside", textfont_size=10)
+            fig.update_layout(legend_title="", xaxis_type="category")
+            st.plotly_chart(dark_layout(fig, 320, "Monatsentwicklung nach Kategorie", f"AUSWERTUNG × MONTH · {total:,} deliveries"), use_container_width=True)
 
         with subtab_st:
             col1, col2, col3 = st.columns(3)
@@ -304,23 +315,6 @@ with tab_dm:
                                    marker_color=bar_colors[:len(countries)]))
             fig.update_layout(yaxis=dict(autorange="reversed"))
             st.plotly_chart(dark_layout(fig, 330, "Top Destination Countries", f"LAND_ENDKUNDE · {total:,} deliveries"), use_container_width=True)
-
-            # Land x Transportart Heatmap
-            traty_labels = {"T": "LKW", "C": "Kurier", "ZZZ": "NzV", "LT": "Sammelgut", "A": "Luft", "S": "See"}
-            dm_hm = dm.copy()
-            dm_hm["Transport"] = dm_hm["TRATY_CODE"].map(traty_labels).fillna(dm_hm["TRATY_CODE"])
-            top_lands = dm_hm["LAND_ENDKUNDE"].value_counts().head(8).index.tolist()
-            dm_hm = dm_hm[dm_hm["LAND_ENDKUNDE"].isin(top_lands)]
-            heatmap_data = dm_hm.groupby(["LAND_ENDKUNDE", "Transport"]).size().reset_index(name="Count")
-            pivot = heatmap_data.pivot(index="LAND_ENDKUNDE", columns="Transport", values="Count").fillna(0)
-            fig = go.Figure(go.Heatmap(
-                z=pivot.values.tolist(),
-                x=pivot.columns.tolist(),
-                y=pivot.index.tolist(),
-                colorscale=[[0, "#0f1117"], [0.5, "#4a90d9"], [1, "#00c9b1"]],
-                hovertemplate="<b>%{y}</b> × %{x}: %{z:,}<extra></extra>"
-            ))
-            st.plotly_chart(dark_layout(fig, 350, "Country × Transport Mode", f"Top 8 LAND_ENDKUNDE × TRATY_CODE"), use_container_width=True)
 
         with subtab_rts:
             st.markdown("**D · READY TO SHIP**")
@@ -454,17 +448,6 @@ with tab_kl:
                              color_discrete_sequence=["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#7b85a8"], hole=0.55)
                 st.plotly_chart(dark_layout(fig, 280, "Business area split", f"Geschaeftsgebiet_Kz · {kl_total:,} shipments"), use_container_width=True)
 
-            # Team trend area chart
-            team_trend = kl.groupby(["MONTH", "TEAM"]).size().reset_index(name="Shipments")
-            team_trend = team_trend.sort_values("MONTH")
-            month_labels_trend = {"2025-07": "Jul", "2025-08": "Aug", "2025-09": "Sep"}
-            team_trend["Label"] = team_trend["MONTH"].map(month_labels_trend).fillna(team_trend["MONTH"])
-            fig = px.area(team_trend, x="Label", y="Shipments", color="TEAM",
-                          color_discrete_map={"Bukarest": "#9b59d0", "Berlin": "#00c9b1"},
-                          category_orders={"Label": ["Jul", "Aug", "Sep"]})
-            fig.update_layout(legend_title="", xaxis_type="category")
-            st.plotly_chart(dark_layout(fig, 280, "Team Volume Trend", f"TEAM × MONTH · Bukarest vs Berlin"), use_container_width=True)
-
         with subtab_geo:
             countries_kl = kl["LANDNAME_ENDVERW"].value_counts()
             n_countries = len(countries_kl[countries_kl.index != ""])
@@ -545,12 +528,3 @@ with tab_kl:
                 ff_ops.columns = ["City", "Count"]
                 fig = px.bar(ff_ops, x="City", y="Count", color_discrete_sequence=["#00c9b1"])
                 st.plotly_chart(dark_layout(fig, 280, "Freight Forwarder Hubs", f"Stadt_Warbe_VB · {kl_total:,} shipments"), use_container_width=True)
-
-            # Top Spediteure
-            top_sped = kl[kl["KOLLONR_LIEFERANT"] != ""]["KOLLONR_LIEFERANT"].value_counts().head(8).reset_index()
-            top_sped.columns = ["Spediteur", "Shipments"]
-            sped_colors = ["#9b59d0", "#00c9b1", "#4a90d9", "#f39c12", "#e74c3c", "#2ecc71", "#7b85a8", "#854F0B"]
-            fig = go.Figure(go.Bar(x=top_sped["Shipments"].tolist(), y=top_sped["Spediteur"].tolist(),
-                                   orientation="h", marker_color=sped_colors[:len(top_sped)]))
-            fig.update_layout(yaxis=dict(autorange="reversed"))
-            st.plotly_chart(dark_layout(fig, 350, "Top Spediteure (Freight Forwarders)", f"Kollonr_Lieferant · Top 8 by shipment volume"), use_container_width=True)
