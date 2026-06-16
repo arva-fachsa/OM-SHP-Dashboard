@@ -2,92 +2,34 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from pathlib import Path
-
-# --- Detect environment: Snowflake SiS or Streamlit Cloud ---
-try:
-    from snowflake.snowpark.context import get_active_session
-    session = get_active_session()
-    IN_SNOWFLAKE = True
-except Exception:
-    IN_SNOWFLAKE = False
-
-try:
-    from PIL import Image
-    _favicon = Image.open(Path(__file__).parent / "assets" / "se_favicon.ico")
-except Exception:
-    _favicon = "📊"
+from snowflake.snowpark.context import get_active_session
 
 st.set_page_config(
     page_title="OM SHP Dashboard",
-    page_icon=_favicon,
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# --- Password Protection (only on Streamlit Cloud, Snowflake has its own auth) ---
-if not IN_SNOWFLAKE:
-    def check_password():
-        if "authenticated" not in st.session_state:
-            st.session_state.authenticated = False
-        if st.session_state.authenticated:
-            return True
-        st.markdown("""
-        <div style='text-align:center; padding-top:80px;'>
-            <h2 style='color:#e8eaf2;'>Shipping Operations Dashboard</h2>
-            <p style='color:#7b85a8;'>SE GS C LGT OM SHP</p>
-        </div>
-        """, unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col2:
-            pwd = st.text_input("Passwort eingeben:", type="password", key="pwd_input")
-            if st.button("Anmelden", use_container_width=True):
-                try:
-                    correct = st.secrets["dashboard_password"]
-                except Exception:
-                    correct = "SHP-Dashboard"
-                if pwd == correct:
-                    st.session_state.authenticated = True
-                    st.rerun()
-                else:
-                    st.error("Falsches Passwort.")
-        return False
+# --- Connection ---
+session = get_active_session()
+DB_SCHEMA = "SNOWFLAKE_LEARNING_DB.GS_FIN_NA_FT"
 
-    if not check_password():
-        st.stop()
+@st.cache_data(ttl=300)
+def load_dm():
+    return session.sql(f"SELECT * FROM {DB_SCHEMA}.DELIVERY_MONITOR").to_pandas()
+
+@st.cache_data(ttl=300)
+def load_kl():
+    return session.sql(f"SELECT * FROM {DB_SCHEMA}.KANLOG_SHIPMENTS").to_pandas()
+
+df_dm = load_dm()
+df_kl = load_kl()
 
 # --- Theme (Dark only) ---
 THEME_TEXT = "#e8eaf2"
 THEME_BG_CARD = "rgba(26,31,48,.85)"
 THEME_CHART_FONT = "#e8eaf2"
-
-# --- Data Loading (auto-detect source) ---
-DB_SCHEMA = "SNOWFLAKE_LEARNING_DB.GS_FIN_NA_FT"
-DATA_DIR = Path(__file__).parent / "data"
-
-@st.cache_data(ttl=300)
-def load_dm():
-    if IN_SNOWFLAKE:
-        return session.sql(f"SELECT * FROM {DB_SCHEMA}.DELIVERY_MONITOR").to_pandas()
-    else:
-        return pd.read_csv(DATA_DIR / "dm_data.csv", header=None,
-                     names=["MONTH", "TEAM", "CATEGORY", "PLANT", "EU_NONEU",
-                            "LAND_ENDKUNDE", "TRATY_CODE", "LIEFERSPERRE",
-                            "TRANSPORTSPERRGRUND", "NZV_FLAG", "AUSWERTUNG"])
-
-@st.cache_data(ttl=300)
-def load_kl():
-    if IN_SNOWFLAKE:
-        return session.sql(f"SELECT * FROM {DB_SCHEMA}.KANLOG_SHIPMENTS").to_pandas()
-    else:
-        return pd.read_csv(DATA_DIR / "kl_data.csv", header=None,
-                     names=["MONTH", "TEAM", "PROJKENNW", "GESCHAEFTSGEBIET_KZ",
-                            "ORG_ID_ABSENDER", "VERSANDZUST_DEU", "STADT_WARBE_VB",
-                            "LANDNAME_FM", "LANDNAME_ENDVERW", "TV_NR", "PACKNR",
-                            "RECHNR", "KOLLONR_LIEFERANT"])
-
-df_dm = load_dm()
-df_kl = load_kl()
 
 # --- Helpers ---
 def safe_pct(part, total):
@@ -157,18 +99,13 @@ h3 {
 </style>""", unsafe_allow_html=True)
 
 # --- Sidebar Filters ---
-
 st.sidebar.markdown("### Shipping Operations Dashboard")
-st.sidebar.caption("SE GS C LGT OM SHP ·  Gasturbinenwerk Berlin")
+st.sidebar.caption("SE GS C LGT OM SHP · Berlin")
 st.sidebar.divider()
 
-# Refresh button
 if st.sidebar.button("Refresh", use_container_width=True):
     st.cache_data.clear()
-    try:
-        st.rerun()
-    except AttributeError:
-        st.experimental_rerun()
+    st.rerun()
 
 st.sidebar.divider()
 
@@ -339,7 +276,7 @@ with tab_dm:
             not_ready = total - ready
             st.markdown(f"""<div style='background:{THEME_BG_CARD};border:1px solid rgba(42,48,80,.5);border-radius:10px;padding:14px 16px;margin-bottom:12px'>
             <div style='font-size:13px;font-weight:600;color:{THEME_TEXT}'>Ready to ship formula</div>
-            <div style='font-size:11px;color:#00c9b1;font-style:italic;margin-top:2px'>Liefersperre="ZH" AND Transportsperrgrund=3 AND TRATY_Code≠"ZZZ" AND NZV_Flag="Nein"</div></div>""", unsafe_allow_html=True)
+            <div style='font-size:11px;color:#00c9b1;font-style:italic;margin-top:2px'>Liefersperre="ZH" AND Transportsperrgrund=3 AND TRATY_Code!="ZZZ" AND NZV_Flag="Nein"</div></div>""", unsafe_allow_html=True)
             r1, r2 = st.columns(2)
             with r1:
                 st.markdown(f"""<div style='background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.25);border-radius:12px;padding:20px;text-align:center'>
@@ -352,7 +289,6 @@ with tab_dm:
                 <div style='font-size:14px;color:#e74c3c'>Not ready</div>
                 <div style='font-size:12px;color:rgba(231,76,60,.7)'>{safe_pct(not_ready, total)} of total</div></div>""", unsafe_allow_html=True)
 
-            # Schedule by month
             st.markdown("**C · SCHEDULE BY MONTH**")
             months_rts = dm["MONTH"].value_counts().sort_index()
             month_names_rts = {"2025-07": "Jul 2025", "2025-08": "Aug 2025", "2025-09": "Sep 2025"}
@@ -443,7 +379,7 @@ with tab_kl:
             c1.markdown(kpi_card("Total shipments", f"{kl_total:,}", None, "filtered"), unsafe_allow_html=True)
             c2.markdown(kpi_card("Bukarest", f"{kl_bukarest:,}", "#9b59d0", safe_pct(kl_bukarest, kl_total)), unsafe_allow_html=True)
             c3.markdown(kpi_card("Berlin", f"{kl_berlin:,}", "#00c9b1", safe_pct(kl_berlin, kl_total)), unsafe_allow_html=True)
-            c4.markdown(kpi_card("Avg / month", f"{kl_total // max(1, kl_months):,}", None, f"{kl_months} / months"), unsafe_allow_html=True)
+            c4.markdown(kpi_card("Avg / month", f"{kl_total // max(1, kl_months):,}", None, f"{kl_months} months"), unsafe_allow_html=True)
             c5.markdown(kpi_card("Invoices", f"{kl_invoices:,}", None, "Distinct Rechnr"), unsafe_allow_html=True)
             c6.markdown(kpi_card("Ships / invoice", f"{kl_total/max(1,kl_invoices):.1f}", "#2ecc71", "Ratio"), unsafe_allow_html=True)
 
@@ -473,7 +409,7 @@ with tab_kl:
             c1.markdown(kpi_card("Dest. countries", f"{n_countries}", None, "Landname_Endverw distinct"), unsafe_allow_html=True)
             c2.markdown(kpi_card("Transit via DE", f"{transit_de:,}", "#2ecc71", "Landname_FM = Deutschland"), unsafe_allow_html=True)
             c3.markdown(kpi_card("Domestic DE", f"{domestic:,}", "#00c9b1", "Landname_Endverw = DE"), unsafe_allow_html=True)
-            c4.markdown(kpi_card("International", f"{kl_total - domestic:,}", None, "Landname_Endverw ≠ DE"), unsafe_allow_html=True)
+            c4.markdown(kpi_card("International", f"{kl_total - domestic:,}", None, "Landname_Endverw != DE"), unsafe_allow_html=True)
 
             top_countries = countries_kl[countries_kl.index != ""].head(10).reset_index()
             top_countries.columns = ["Country", "Count"]
@@ -499,7 +435,6 @@ with tab_kl:
                                  top_proj.iloc[0]["Project"] if len(top_proj) > 0 else ""), unsafe_allow_html=True)
             c3.markdown(kpi_card("Top 5 share", safe_pct(top_proj.head(5)["Shipments"].sum(), kl_total), None, "% of total shipments"), unsafe_allow_html=True)
 
-            # Business area volume cards
             st.markdown("**Business area volume**")
             st.caption("Shipments per Geschaeftsgebiet_Kz")
             area_counts = kl["GESCHAEFTSGEBIET_KZ"].value_counts()
