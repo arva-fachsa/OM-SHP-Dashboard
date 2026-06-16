@@ -3,9 +3,12 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
-from PIL import Image
 
-_favicon = Image.open(Path(__file__).parent / "assets" / "se_favicon.ico")
+try:
+    from PIL import Image
+    _favicon = Image.open(Path(__file__).parent / "assets" / "se_favicon.ico")
+except Exception:
+    _favicon = "🏭"
 
 st.set_page_config(
     page_title="OM SHP Dashboard",
@@ -31,7 +34,10 @@ def check_password():
     with col2:
         pwd = st.text_input("Passwort eingeben:", type="password", key="pwd_input")
         if st.button("Anmelden", use_container_width=True):
-            correct = st.secrets.get("dashboard_password", "SE-Dashboard-2025")
+            try:
+                correct = st.secrets["dashboard_password"]
+            except Exception:
+                correct = "SHP-Dashboard"
             if pwd == correct:
                 st.session_state.authenticated = True
                 st.rerun()
